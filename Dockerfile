@@ -30,8 +30,9 @@ RUN npm ci --omit=dev
 # Copy built code from builder
 COPY --from=builder /app/dist ./dist
 
-# Create necessary directories for runtime
-RUN mkdir -p /app/config /app/data
+# Copy default config and data directories
+COPY config/ ./config/
+COPY data/ ./data/
 
 # Ensure correct permissions (optional, good practice)
 RUN chown -R node:node /app
