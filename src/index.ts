@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import cron from 'node-cron';
+import http from 'http';
 import { loadClients } from './config';
 import { runClientJob } from './engine';
 
@@ -29,6 +30,17 @@ async function bootstrap() {
       });
     });
   }
+
+  // Uruchomienie prostego serwera HTTP do health checków dla Coolify
+  const port = process.env.PORT || 3000;
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  });
+
+  server.listen(port, () => {
+    console.log(`Health check server listening on port ${port}`);
+  });
 
   console.log('AI Content Engine Turbo is running in the background.');
 }
