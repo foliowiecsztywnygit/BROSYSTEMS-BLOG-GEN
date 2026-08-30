@@ -5,7 +5,7 @@ Scentralizowany mikroserwis Node.js (TypeScript) do automatycznego generowania i
 ## Funkcjonalności
 
 - **Automatyzacja Cron:** Samodzielne generowanie treści w zdefiniowanych odstępach czasu.
-- **AI & Web Search:** Wykorzystuje model `gpt-4o` (OpenAI) oraz wyszukiwarkę (Tavily) do dostarczania aktualnych i spersonalizowanych treści z uwzględnieniem najświeższych wydarzeń i lokalnych atrakcji.
+- **AI & Web Search:** Wykorzystuje model `gpt-4o` (OpenAI), który posiada szeroką wiedzę o trendach i sezonowości, dostarczając spersonalizowane treści.
 - **GitOps (GitHub API):** Bezpośrednia publikacja artykułów na GitHubie (jako pliki `.md` z poprawnym Frontmatter).
 - **Zarządzanie Historią:** Zapobiega duplikowaniu tytułów – pamięta ostatnio poruszane tematy.
 
@@ -22,7 +22,6 @@ Ten mikroserwis jest w pełni zoptymalizowany pod kątem wdrożenia w [Coolify](
 W panelu Coolify przejdź do swojego serwisu i dodaj następujące zmienne:
 
 - `OPENAI_API_KEY` - klucz API z OpenAI.
-- `TAVILY_API_KEY` - (Opcjonalnie) klucz do Tavily API w celu wyszukiwania w sieci, co pozwoli na uwzględnienie aktualnych informacji.
 - Zmienne z tokenami GitHub definiowane dla klientów. Zgodnie z domyślnym `clients.json`:
   - `GITHUB_TOKEN_KOSCIELISKO` - token GitHub (Personal Access Token) z uprawnieniami do odczytu/zapisu repozytorium klienta ("Domki pod Giewontem").
 

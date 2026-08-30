@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { tavily } from '@tavily/core';
 import { ClientConfig } from './config';
 
 const openai = new OpenAI({
@@ -16,25 +15,7 @@ export interface GenerateResult {
 
 export async function generateContent(client: ClientConfig, pastTopics: string[]): Promise<GenerateResult> {
   const currentDate = new Date().toISOString().split('T')[0];
-  let searchContext = "";
-
-  // 1. Tavily Web Search for current context
-  if (process.env.TAVILY_API_KEY) {
-    const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
-    try {
-      const query = `Aktualne wydarzenia, warunki i polecane aktywności w: ${client.location}, sezon i trendy turystyczne (keywords: ${client.keywords.join(', ')})`;
-      const searchResponse = await tvly.search(query, {
-        searchDepth: "basic",
-        includeAnswer: true,
-        maxResults: 3,
-      });
-      searchContext = `Wyniki wyszukiwania dla okolicy:\n${searchResponse.answer}\n`;
-    } catch (error) {
-      console.warn(`[${client.clientId}] Tavily search failed, proceeding without current web context.`, error);
-    }
-  }
-
-  // 2. OpenAI Generation
+  // Wersja bez zew. API - model wykorzystuje własną wiedzę o lokacji na dany sezon
   const systemPrompt = `You are an expert SEO copywriter and local guide for the business: ${client.clientName}.
 You generate ultra-natural, SEO-optimized blog articles in Polish.
 
@@ -46,7 +27,7 @@ CLIENT INFO:
 
 CURRENT CONTEXT:
 - Today's Date: ${currentDate}
-- Real-time Web Context: ${searchContext || "No real-time data available. Use general seasonal knowledge."}
+- Context: Use your internal knowledge about the current season, upcoming holidays, and typical tourist events for this location to make the article relevant.
 
 PAST TOPICS (DO NOT REPEAT):
 ${pastTopics.length > 0 ? pastTopics.map(t => `- ${t}`).join('\n') : "No past topics."}
