@@ -31,6 +31,19 @@ async function bootstrap() {
     });
   }
 
+  // Uruchomienie wygenerowania po starcie aplikacji (w tle, sekwencyjnie, by uniknąć rate-limitów OpenAI)
+  (async () => {
+    console.log('--- Starting initial startup run for all clients ---');
+    for (const client of clients) {
+      try {
+        await runClientJob(client);
+      } catch (err) {
+        console.error(`[${client.clientId}] Startup run failed:`, err);
+      }
+    }
+    console.log('--- Initial startup run completed ---');
+  })();
+
   // Uruchomienie prostego serwera HTTP do health checków dla Coolify
   const port = process.env.PORT || 3000;
   const server = http.createServer((req, res) => {
