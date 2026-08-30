@@ -1,12 +1,101 @@
 [
   {
-    "clientId": "domki-koscielisko",
-    "clientName": "Domki pod Giewontem",
-    "clientType": "całoroczne domki z sauną",
-    "location": "Kościelisko, Podhale",
-    "attractionsList": ["Dolina Kościeliska (800m)", "Termy Chocholowskie (8km)", "Witów-Ski (5km)"],
-    "keywords": ["domki kościelisko", "noclegi z sauną podhale", "gdzie na majówkę w góry"],
-    "githubRepo": "twoj-username/domki-koscielisko-web",
+    "clientId": "domki-na-zrabku",
+    "clientName": "Domki na Zrąbku Pod Gubałówką",
+    "clientType": "domki premium z balią ogrodową",
+    "location": "Nowe Bystre / Ząb, pod Gubałówką",
+    "attractionsList": [
+      "Gubałówka (30-40 min spacerem)",
+      "Centrum Zakopanego (krótki dojazd)",
+      "Kameralne stoki narciarskie"
+    ],
+    "keywords": [
+      "domki pod gubałówką",
+      "nocleg nowe bystre",
+      "domki z balią ząb",
+      "spokojny nocleg blisko zakopanego"
+    ],
+    "githubRepo": "foliowiecsztywnygit/domkinazrabkupodgubalowka",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * 1"
+  },
+  {
+    "clientId": "willa-szymkowka",
+    "clientName": "Willa Szymkówka",
+    "clientType": "willa z pokojami (styl Modern Alpine)",
+    "location": "Zakopane, ul. Strążyska 1H",
+    "attractionsList": [
+      "Dolina Strążyska (kilka kroków od obiektu)",
+      "Szlaki Tatrzańskiego Parku Narodowego",
+      "Górski strumyk przy posesji"
+    ],
+    "keywords": [
+      "willa zakopane",
+      "noclegi dolina strążyska",
+      "pokoje zakopane widok na góry",
+      "nocleg blisko szlaków zakopane"
+    ],
+    "githubRepo": "foliowiecsztywnygit/Willa-Szymk-wka",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * 1"
+  },
+  {
+    "clientId": "tatrzanski-wierch",
+    "clientName": "Tatrzański Wierch",
+    "clientType": "kameralna agroturystyka z widokiem",
+    "location": "Bańska Wyżna, Podhale",
+    "attractionsList": [
+      "Termy Chochołowskie",
+      "Wyciąg narciarski CzerwienneSki",
+      "Karczma WiYRCHowo"
+    ],
+    "keywords": [
+      "agroturystyka bańska wyżna",
+      "noclegi widok na tatry",
+      "pokoje bańska wyżna",
+      "tani nocleg z aneksem podhale"
+    ],
+    "githubRepo": "foliowiecsztywnygit/tatrza-ski-wierch",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * 1"
+  },
+  {
+    "clientId": "osada-dzianisz-n54",
+    "clientName": "Osada Dzianisz N°54",
+    "clientType": "luksusowe domki wakacyjne (do 14 osób)",
+    "location": "Dzianisz (9 km od Zakopanego)",
+    "attractionsList": [
+      "Termy Chochołowskie (2km)",
+      "Stacja narciarska Witów Ski (2km)",
+      "Centrum Zakopanego (9km)"
+    ],
+    "keywords": [
+      "luksusowe domki dzianisz",
+      "domki blisko term chochołowskich",
+      "duże domki w górach",
+      "domki dla 14 osób podhale"
+    ],
+    "githubRepo": "foliowiecsztywnygit/osadadzianiszn54",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * 1"
+  },
+  {
+    "clientId": "cicha-przystan-dzianisz",
+    "clientName": "Cicha Przystań Dzianisz",
+    "clientType": "luksusowe domki z ruską banią i sauną",
+    "location": "Dzianisz, ul. Dworska",
+    "attractionsList": [
+      "Tatrzański Park Narodowy (6km)",
+      "Widok z tarasu na Giewont",
+      "Termy Chochołowskie"
+    ],
+    "keywords": [
+      "domki dzianisz ruska bania",
+      "luksusowe domki z widokiem na giewont",
+      "domki z sauną dzianisz",
+      "domki na wyłączność tatry"
+    ],
+    "githubRepo": "foliowiecsztywnygit/dwa-domki-dzianisz",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1"
   }
