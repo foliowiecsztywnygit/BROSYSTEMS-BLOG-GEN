@@ -11,7 +11,6 @@ export interface ClientConfig {
   githubRepo: string;
   destinationFolder: string;
   cronSchedule: string;
-  githubTokenEnvKey: string;
 }
 
 const CONFIG_FILE_PATH = path.join(__dirname, '..', 'config', 'clients.json');

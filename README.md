@@ -22,10 +22,7 @@ Ten mikroserwis jest w pełni zoptymalizowany pod kątem wdrożenia w [Coolify](
 W panelu Coolify przejdź do swojego serwisu i dodaj następujące zmienne:
 
 - `OPENAI_API_KEY` - klucz API z OpenAI.
-- Zmienne z tokenami GitHub definiowane dla klientów. Zgodnie z domyślnym `clients.json`:
-  - `GITHUB_TOKEN_KOSCIELISKO` - token GitHub (Personal Access Token) z uprawnieniami do odczytu/zapisu repozytorium klienta ("Domki pod Giewontem").
-
-*(Kolejni klienci będą wymagać podania odpowiedniego klucza w configu i dodania go jako zmiennej środowiskowej w Coolify).*
+- `GITHUB_TOKEN` - Twój uniwersalny klucz do GitHuba (Personal Access Token), który ma uprawnienia do edytowania repozytoriów wszystkich klientów.
 
 ### 2. Mapowanie Wolumenów (Storage)
 
@@ -48,8 +45,7 @@ Przykładowy plik `config/clients.json`:
     "keywords": ["domki kościelisko", "noclegi z sauną podhale", "gdzie na majówkę w góry"],
     "githubRepo": "twoj-username/domki-koscielisko-web",
     "destinationFolder": "src/content/blog",
-    "cronSchedule": "0 9 * * 1",
-    "githubTokenEnvKey": "GITHUB_TOKEN_KOSCIELISKO"
+    "cronSchedule": "0 9 * * 1"
   }
 ]
 ```

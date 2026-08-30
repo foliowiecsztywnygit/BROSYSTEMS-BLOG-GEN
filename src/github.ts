@@ -10,9 +10,9 @@ interface GeneratedArticle {
 }
 
 export async function publishToGithub(client: ClientConfig, article: GeneratedArticle): Promise<void> {
-  const token = process.env[client.githubTokenEnvKey];
+  const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    throw new Error(`GitHub token not found in environment variable: ${client.githubTokenEnvKey}`);
+    throw new Error(`Global GitHub token not found in environment variable: GITHUB_TOKEN`);
   }
 
   const { title, description, date, slug, markdown_content } = article;
