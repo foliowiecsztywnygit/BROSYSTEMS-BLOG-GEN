@@ -1,0 +1,14 @@
+[
+  {
+    "clientId": "domki-koscielisko",
+    "clientName": "Domki pod Giewontem",
+    "clientType": "całoroczne domki z sauną",
+    "location": "Kościelisko, Podhale",
+    "attractionsList": ["Dolina Kościeliska (800m)", "Termy Chocholowskie (8km)", "Witów-Ski (5km)"],
+    "keywords": ["domki kościelisko", "noclegi z sauną podhale", "gdzie na majówkę w góry"],
+    "githubRepo": "twoj-username/domki-koscielisko-web",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * 1",
+    "githubTokenEnvKey": "GITHUB_TOKEN_KOSCIELISKO"
+  }
+]
