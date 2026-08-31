@@ -18,7 +18,7 @@
     "githubRepo": "foliowiecsztywnygit/domkinazrabkupodgubalowka",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1",
-    "deployWebhookUrl": ""
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=fwc254lc3me2sc030cq94i6w&force=false"
   },
   {
     "clientId": "willa-szymkowka",
@@ -39,7 +39,7 @@
     "githubRepo": "foliowiecsztywnygit/Willa-Szymk-wka",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1",
-    "deployWebhookUrl": ""
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=c7togiqaot6ms638w9ybwg20&force=false"
   },
   {
     "clientId": "tatrzanski-wierch",
@@ -60,7 +60,7 @@
     "githubRepo": "foliowiecsztywnygit/tatrza-ski-wierch",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1",
-    "deployWebhookUrl": ""
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=h1chad4l5b9zj5f9nniz7te3&force=false"
   },
   {
     "clientId": "osada-dzianisz-n54",
@@ -81,7 +81,7 @@
     "githubRepo": "foliowiecsztywnygit/osadadzianiszn54",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1",
-    "deployWebhookUrl": ""
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=m395a5qaz71g99qnli4h3d41&force=false"
   },
   {
     "clientId": "cicha-przystan-dzianisz",
@@ -102,6 +102,6 @@
     "githubRepo": "foliowiecsztywnygit/dwa-domki-dzianisz",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1",
-    "deployWebhookUrl": ""
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=b1oo3o7v43xkjw8c6tgq9ool&force=false"
   }
 ]
