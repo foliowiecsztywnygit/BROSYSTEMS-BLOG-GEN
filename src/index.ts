@@ -15,6 +15,35 @@ async function bootstrap() {
 
   console.log(`Loaded ${clients.length} clients from config.`);
 
+  // System kolejkowania zadań, aby uniknąć równoległych deploymentów (ochrona RAMu serwera)
+  const jobQueue: typeof clients = [];
+  let isProcessingQueue = false;
+
+  async function processQueue() {
+    if (isProcessingQueue) return;
+    isProcessingQueue = true;
+
+    while (jobQueue.length > 0) {
+      const client = jobQueue.shift();
+      if (client) {
+        try {
+          await runClientJob(client);
+        } catch (err) {
+          console.error(`[${client.clientId}] Job in queue failed:`, err);
+        }
+        
+        // Jeśli są kolejne zadania w kolejce, czekamy 5 minut (300 000 ms),
+        // aby dać czas Coolify na ukończenie poprzedniego deploymentu bez przeciążania RAMu.
+        if (jobQueue.length > 0) {
+          console.log(`[Queue] Waiting 5 minutes before starting the next job...`);
+          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        }
+      }
+    }
+
+    isProcessingQueue = false;
+  }
+
   for (const client of clients) {
     if (!cron.validate(client.cronSchedule)) {
       console.error(`[${client.clientId}] Invalid cron schedule: ${client.cronSchedule}`);
@@ -24,25 +53,18 @@ async function bootstrap() {
     console.log(`[${client.clientId}] Scheduling job with cron: ${client.cronSchedule}`);
     
     cron.schedule(client.cronSchedule, () => {
-      console.log(`[${client.clientId}] Cron triggered.`);
-      runClientJob(client).catch(err => {
-        console.error(`[${client.clientId}] Unhandled error in cron job execution:`, err);
-      });
+      console.log(`[${client.clientId}] Cron triggered. Adding to queue.`);
+      jobQueue.push(client);
+      processQueue();
     });
   }
 
-  // Uruchomienie wygenerowania po starcie aplikacji (w tle, sekwencyjnie, by uniknąć rate-limitów OpenAI)
-  (async () => {
-    console.log('--- Starting initial startup run for all clients ---');
-    for (const client of clients) {
-      try {
-        await runClientJob(client);
-      } catch (err) {
-        console.error(`[${client.clientId}] Startup run failed:`, err);
-      }
-    }
-    console.log('--- Initial startup run completed ---');
-  })();
+  // Uruchomienie wygenerowania po starcie aplikacji (w tle, sekwencyjnie z przerwami)
+  console.log('--- Adding initial startup run to queue for all clients ---');
+  for (const client of clients) {
+    jobQueue.push(client);
+  }
+  processQueue();
 
   // Uruchomienie prostego serwera HTTP do health checków dla Coolify
   const port = process.env.PORT || 3000;
