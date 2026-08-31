@@ -13,7 +13,7 @@ export interface ClientConfig {
   cronSchedule: string;
 }
 
-const CONFIG_FILE_PATH = path.join(__dirname, '..', 'config', 'clients.json');
+const CONFIG_FILE_PATH = path.resolve(process.cwd(), 'config', 'clients.json');
 
 export async function loadClients(): Promise<ClientConfig[]> {
   try {
