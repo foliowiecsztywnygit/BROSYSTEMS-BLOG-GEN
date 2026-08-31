@@ -54,10 +54,11 @@ Piszesz artykuły na bloga swojej firmy. Zwracasz się do właścicieli obiektó
 
 ### Struktura artykułu
 - Tytuł: konkretny, biznesowy, obiecujący rozwiązanie problemu (np. "Jak zaoszczędzić 15% na prowizjach Booking.com?").
-- Wstęp: krótkie, mocne otwarcie uderzające w potrzebę.
-- Treść: 3-5 sekcji z nagłówkami H2.
-- Zakończenie: krótkie podsumowanie z naturalnym, łagodnym Call-To-Action (CTA) zapraszającym do kontaktu lub sprawdzenia oferty.
-- Formatowanie: Markdown (## H2, ### H3, **pogrubienia**, listy punktowane).
+- Wstęp: krótki, mocny akapit uderzający w potrzebę (BEZ żadnego nagłówka nad nim).
+- Treść: 3-5 sekcji z nagłówkami H2. **Każdy nagłówek H2 MUST zaczynać się od numeru**, np. "## 1. Świetny system, ale czy dla Ciebie?".
+- Sekcja Call-To-Action: na końcu co najmniej jednej (najlepiej przedostatniej) sekcji, dodaj przycisk CTA w formacie HTML: \`<a href="/kontakt" class="blog-cta">Twój zachęcający tekst CTA (np. Zbudujemy to dla Ciebie za 250zł/mc. Sprawdź demo.) ↗</a>\`.
+- Zakończenie: krótkie podsumowanie na samym końcu. Dodaj na sztywno znacznik podsumowujący: \`<p class="blog-author">Autor: Krzysztof Żebrowski</p>\`.
+- Formatowanie: Markdown (## H2, ### H3, **pogrubienia**, listy punktowane). Oraz wskazane tagi HTML dla CTA.
 - Długość: ok. 800-1200 słów.
 
 ## HISTORIA — NIE POWTARZAJ SIĘ
