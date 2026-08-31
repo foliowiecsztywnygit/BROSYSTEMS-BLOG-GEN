@@ -103,5 +103,31 @@
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * 1",
     "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=b1oo3o7v43xkjw8c6tgq9ool&force=false"
+  },
+  {
+    "clientId": "brosystems",
+    "clientName": "WEBBROSKIDEV - Krzysztof Żebrowski",
+    "clientType": "Twórca stron www i systemów rezerwacji dla obiektów noclegowych (B2B)",
+    "location": "Polska (szczególnie Podhale, Zakopane, Szczyrk)",
+    "attractionsList": [
+      "Rezerwacje bezpośrednie bez prowizji",
+      "Integracje z Hotres i Roomadmin",
+      "Nowoczesny design zoptymalizowany pod konwersję",
+      "Lokalne SEO dla pensjonatów",
+      "Niezależność od OTA (Booking, Airbnb)"
+    ],
+    "keywords": [
+      "strony dla pensjonatów",
+      "strony dla willi",
+      "strony dla domków",
+      "rezerwacje bezpośrednie",
+      "system rezerwacji na stronę",
+      "jak uniezależnić się od booking",
+      "seo lokalne zakopane"
+    ],
+    "githubRepo": "foliowiecsztywnygit/brosystems",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * *",
+    "deployWebhookUrl": ""
   }
 ]
