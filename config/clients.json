@@ -125,9 +125,9 @@
       "jak uniezależnić się od booking",
       "seo lokalne zakopane"
     ],
-    "githubRepo": "foliowiecsztywnygit/brosystems",
+    "githubRepo": "foliowiecsztywnygit/BROSYSTEMS-LANDING",
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * *",
-    "deployWebhookUrl": ""
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=x109wxyuyqzts63p784w6za2&force=false"
   }
 ]
