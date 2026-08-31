@@ -27,6 +27,18 @@ export async function runClientJob(client: ClientConfig, isRetry: boolean = fals
     console.log(`${logPrefix} Updating history...`);
     await addHistoryEntry(client.clientId, article.title, article.date);
 
+    // 5. Trigger Redeploy (if configured)
+    if (client.deployWebhookUrl) {
+      console.log(`${logPrefix} Triggering redeploy webhook: ${client.deployWebhookUrl}`);
+      try {
+        const axios = (await import('axios')).default;
+        await axios.get(client.deployWebhookUrl);
+        console.log(`${logPrefix} Redeploy triggered successfully!`);
+      } catch (webhookErr) {
+        console.error(`${logPrefix} Redeploy webhook failed (article was published though):`, webhookErr);
+      }
+    }
+
     console.log(`${logPrefix} Job completed successfully.`);
   } catch (error) {
     console.error(`${logPrefix} Job failed:`, error);

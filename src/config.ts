@@ -11,6 +11,7 @@ export interface ClientConfig {
   githubRepo: string;
   destinationFolder: string;
   cronSchedule: string;
+  deployWebhookUrl?: string;
 }
 
 const CONFIG_FILE_PATH = path.resolve(process.cwd(), 'config', 'clients.json');
