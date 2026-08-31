@@ -32,10 +32,14 @@ export async function runClientJob(client: ClientConfig, isRetry: boolean = fals
       console.log(`${logPrefix} Triggering redeploy webhook: ${client.deployWebhookUrl}`);
       try {
         const axios = (await import('axios')).default;
-        await axios.get(client.deployWebhookUrl);
+        const headers: Record<string, string> = {};
+        if (process.env.COOLIFY_API_TOKEN) {
+          headers['Authorization'] = `Bearer ${process.env.COOLIFY_API_TOKEN}`;
+        }
+        await axios.get(client.deployWebhookUrl, { headers });
         console.log(`${logPrefix} Redeploy triggered successfully!`);
-      } catch (webhookErr) {
-        console.error(`${logPrefix} Redeploy webhook failed (article was published though):`, webhookErr);
+      } catch (webhookErr: any) {
+        console.error(`${logPrefix} Redeploy webhook failed (article was published though):`, webhookErr?.response?.data || webhookErr?.message);
       }
     }
 
