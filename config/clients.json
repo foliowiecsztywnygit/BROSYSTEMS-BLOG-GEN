@@ -105,6 +105,29 @@
     "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=b1oo3o7v43xkjw8c6tgq9ool&force=false"
   },
   {
+    "clientId": "willa-bielik-karpacz",
+    "clientName": "Willa Bielik",
+    "clientType": "komfortowy pensjonat z pokojami u podnóża Karkonoszy",
+    "location": "Karpacz, ul. Sarnia 5",
+    "attractionsList": [
+      "Karkonoski Park Narodowy",
+      "Śnieżka",
+      "Skocznia Orlinek (1.3 km)",
+      "Kolejka na Kopę (2 km)"
+    ],
+    "keywords": [
+      "noclegi karpacz",
+      "willa karpacz",
+      "pokoje gościnne karpacz",
+      "willa bielik karpacz",
+      "pensjonat blisko szlaków karkonosze"
+    ],
+    "githubRepo": "foliowiecsztywnygit/willa-bielik",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 10 * * 1",
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=qvan83f0mtpw4mwrrcnepwmk&force=false"
+  },
+  {
     "clientId": "brosystems",
     "clientName": "WEBBROSKIDEV - Krzysztof Żebrowski",
     "clientType": "Twórca stron www i systemów rezerwacji dla obiektów noclegowych (B2B)",
