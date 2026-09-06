@@ -18,7 +18,9 @@ export async function publishToGithub(client: ClientConfig, article: GeneratedAr
   const { title, description, date, slug, markdown_content } = article;
 
   // Format content with Frontmatter
-  const fileContent = `---
+  let fileContent = markdown_content;
+  if (!fileContent.trim().startsWith('---')) {
+    fileContent = `---
 title: "${title.replace(/"/g, '\\"')}"
 description: "${description.replace(/"/g, '\\"')}"
 date: "${date}"
@@ -26,6 +28,7 @@ slug: "${slug}"
 ---
 ${markdown_content}
 `;
+  }
 
   // Encode to Base64
   const contentBase64 = Buffer.from(fileContent, 'utf-8').toString('base64');

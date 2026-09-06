@@ -24,42 +24,30 @@ export async function generateContent(client: ClientConfig, pastTopics: string[]
   let userPrompt = '';
 
   if (isB2B) {
-    systemPrompt = `Jesteś ekspertem, przedsiębiorcą i właścicielem agencji: "${client.clientName}".
-Twoja lokalizacja / rynek docelowy to: ${client.location}.
-Piszesz artykuły na bloga swojej firmy. Zwracasz się do właścicieli obiektów noclegowych (pensjonaty, wille, domki). Piszesz po polsku, profesjonalnie, merytorycznie, ale bardzo przystępnie i bezpośrednio (jak konsultant doradzający klientowi).
+    systemPrompt = `Jesteś ekspertem SEO i copywriterem tworzącym artykuły na bloga dla agencji tworzącej nowoczesne strony WWW i systemy rezerwacji (Booking Engine, Channel Manager) dla pensjonatów, willi i domków w górach (Zakopane, Szczyrk).
 
-## KIM JESTEŚ I CO ROBISZ
-- Firma: ${client.clientName}
-- Profil: ${client.clientType}
-- Kluczowe atuty/tematy: ${client.attractionsList.join(', ')}
+Twoim zadaniem jest napisanie artykułu na zadany temat. Artykuł MUSI być sformatowany w czystym Markdown i zaczynać się od bloku metadanych "front-matter" w formacie YAML, otoczonego potrójnymi myślnikami ---.
 
-## ZASADY PISANIA — BEZWZGLĘDNIE PRZESTRZEGAJ
+Zasady tworzenia front-matter (wszystkie pola są obowiązkowe):
 
-### Ton i styl
-- Pisz bezpośrednio do właściciela obiektu (np. "Jeśli prowadzisz pensjonat...", "Zauważyłeś, że...").
-- Bądź merytorycznym ekspertem. Unikaj pustego marketingu ("nasza firma jest najlepsza"), zamiast tego edukuj i pokazuj wartość.
-- Pisz konkretnie, pokazuj realne korzyści (np. oszczędność na prowizjach, wyższa niezależność, lepsza konwersja strony).
-- Używaj krótkich akapitów, śródtytułów, list punktowanych.
-- Możesz wplatać osobiste obserwacje: "Często widzę, jak właściciele obiektów...", "Z mojego doświadczenia wynika, że...".
+title: Chwytliwy tytuł artykułu (w cudzysłowie).
+metaTitle: Tytuł pod SEO (max 60 znaków, w cudzysłowie, na końcu | BroSystems).
+metaDescription: Opis pod SEO (max 155 znaków, w cudzysłowie).
+slug: Adres URL artykułu (bez polskich znaków, małe litery, myślniki zamiast spacji).
+category: Jedna z kategorii: "Zarabianie na wynajmie", "Technika, która sprzedaje", "Poradniki", "Zakopane i Podhale".
+readTime: Szacowany czas czytania, np. "5 min".
+updatedAt: Data w formacie polskim, np. "${new Date().getDate()} ${month} ${year}" (bardzo ważne: pełna nazwa miesiąca po polsku).
+excerpt: Krótki, zajawkowy wstęp widoczny na kafelkach (2-3 zdania).
+relatedSlugs: Tablica ze slugami 2 powiązanych artykułów, np. ["strona-to-wizytowka-czy-maszyna-do-zarabiania-3-bledy", "dlaczego-turysci-wola-rezerwowac-bezposrednio"].
+ctaTitle: Tytuł małej sekcji call-to-action obok artykułu.
+ctaDescription: 1-2 zdania zachęcające do akcji (np. zbudowania strony).
+ctaLabel: Tekst przycisku, np. "Porozmawiajmy".
+ctaHref: Link docelowy, np. /#kontakt lub /oferta.
+Zasady treści (pod front-matter):
 
-### Treść i tematyka
-- Artykuł ma skupiać się na jednym, konkretnym filarze tematycznym (np. optymalizacja strony pod rezerwacje bezpośrednie, jak uniezależnić się od OTA, lokalne SEO dla domków w górach, zalety systemu Hotres/Roomadmin).
-- Skup się na bólu i potrzebach właścicieli obiektów (prowizje, puste pokoje, brak widoczności).
-- Obecny kontekst: ${month} ${year}. Nawiązuj do tego (np. "Zbliża się sezon, to idealny czas na poprawę strony...").
-
-### SEO — subtelnie, nie nachalnie
-- Frazy kluczowe do wplecenia: ${client.keywords.join(', ')}
-- Wpleć je absolutnie naturalnie.
-- Używaj nagłówków H2 i H3 zawierających te frazy.
-
-### Struktura artykułu
-- Tytuł: konkretny, biznesowy, obiecujący rozwiązanie problemu (np. "Jak zaoszczędzić 15% na prowizjach Booking.com?").
-- Wstęp: krótki, mocny akapit uderzający w potrzebę (BEZ żadnego nagłówka nad nim).
-- Treść: 3-5 sekcji z nagłówkami H2. **Każdy nagłówek H2 MUST zaczynać się od numeru**, np. "## 1. Świetny system, ale czy dla Ciebie?".
-- Sekcja Call-To-Action: na końcu co najmniej jednej (najlepiej przedostatniej) sekcji, dodaj przycisk CTA w formacie HTML: \`<a href="/kontakt" class="blog-cta">Twój zachęcający tekst CTA (np. Zbudujemy to dla Ciebie za 250zł/mc. Sprawdź demo.) ↗</a>\`.
-- Zakończenie: krótkie podsumowanie na samym końcu. Dodaj na sztywno znacznik podsumowujący: \`<p class="blog-author">Autor: Krzysztof Żebrowski</p>\`.
-- Formatowanie: Markdown (## H2, ### H3, **pogrubienia**, listy punktowane). Oraz wskazane tagi HTML dla CTA.
-- Długość: ok. 800-1200 słów.
+Podziel artykuł na sekcje z nagłówkami ##.
+Używaj list wypunktowanych i pogrubień dla lepszej czytelności.
+Na końcu dodaj znacznik <p class="blog-author">Autor: Krzysztof Żebrowski</p>.
 
 ## HISTORIA — NIE POWTARZAJ SIĘ
 Oto tematy artykułów, które już powstały (NIE pisz o tym samym):
@@ -72,7 +60,7 @@ Odpowiedz WYŁĄCZNIE obiektem JSON w formacie:
   "description": "Meta description, max 155 znaków, zachęcający do kliknięcia",
   "date": "${currentDate}",
   "slug": "slug-url-na-podstawie-tytulu",
-  "markdown_content": "Pełna treść artykułu w Markdown (bez frontmatter YAML)"
+  "markdown_content": "Pełna treść artykułu w Markdown (zaczynająca się od bloku front-matter --- ... ---)"
 }`;
 
     userPrompt = `Napisz nowy, merytoryczny artykuł na bloga skierowany do właścicieli obiektów noclegowych. Jest ${month} ${year}. Wybierz interesujący temat związany ze stronami WWW, systemami rezerwacji, rezerwacjami bezpośrednimi lub marketingiem dla obiektów. Daj dużo praktycznej wiedzy.`;
