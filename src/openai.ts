@@ -62,6 +62,19 @@ const B2B_FORMATS = [
   },
 ];
 
+const B2B_TOPICS = [
+  'Znaczenie szybkiej i nowoczesnej strony internetowej dla budowania zaufania gości',
+  'Mobilna wersja strony – dlaczego większość gości rezerwuje przez telefon i jak tego nie zepsuć',
+  'Jak wykorzystać lokalne SEO, by turysta znalazł Twój obiekt szybciej niż na portalach',
+  'Automatyzacja procesów – jak mądry kalendarz rezerwacji oszczędza godziny Twojego czasu',
+  'Sprzedaż pakietów pobytowych i ofert poza sezonem głównym – budowa lojalności gości',
+  'Zdjęcia i prezentacja oferty na stronie – jak pokazać wartość obiektu, by gość nie patrzył tylko na cenę',
+  'Budowanie marki własnego obiektu – jak przestać być tylko kolejnym domkiem z listy na portalu',
+  'Psychologia rezerwacji – co sprawia, że gość ufa Twojej stronie i klika "Rezerwuj"',
+  'Bezpieczeństwo, szybkie płatności i jasne zasady – dlaczego goście porzucają koszyk i jak temu zapobiec',
+  'Blog i aktualności – jak pisać o atrakcjach regionu, żeby ściągać darmowy ruch z wyszukiwarki'
+];
+
 export async function generateContent(client: ClientConfig, pastTopics: string[]): Promise<GenerateResult> {
   const currentDate = new Date().toISOString().split('T')[0];
   const month = new Date().toLocaleString('pl-PL', { month: 'long' });
@@ -74,9 +87,11 @@ export async function generateContent(client: ClientConfig, pastTopics: string[]
   let userPrompt = '';
 
   if (isB2B) {
-    // Rotacja formatów: cyklicznie na podstawie dnia miesiąca + liczby dotychczasowych artykułów
+    // Rotacja formatów i tematów: cyklicznie na podstawie dnia miesiąca, miesiąca + liczby dotychczasowych artykułów
     const formatIndex = (new Date().getDate() + pastTopics.length) % B2B_FORMATS.length;
     const selectedFormat = B2B_FORMATS[formatIndex];
+    const topicIndex = (new Date().getMonth() + pastTopics.length) % B2B_TOPICS.length;
+    const selectedTopic = B2B_TOPICS[topicIndex];
 
     systemPrompt = `Jesteś ekspertem od marketingu i sprzedaży stron internetowych dla obiektów noclegowych. Prowadzisz firmę "${client.clientName}".
 Rynek docelowy: ${client.location}.
@@ -163,6 +178,9 @@ Odpowiedz WYŁĄCZNIE obiektem JSON z poniższymi polami (WSZYSTKIE są wymagane
 
     userPrompt = `Napisz obszerny, wartościowy artykuł w formacie "${selectedFormat.name}" skierowany do właścicieli obiektów noclegowych na rynku: ${client.location}.
 
+TEMAT PRZEWODNI ARTYKUŁU: "${selectedTopic}"
+(Zbuduj treść wokół tego tematu, dopasowując ją do wymaganego formatu).
+
 WYMAGANIA:
 - Minimum 1200 słów wartościowej treści
 - Minimum 3 konkretne kalkulacje finansowe z kwotami PLN
@@ -233,7 +251,7 @@ Odpowiedz WYŁĄCZNIE obiektem JSON w formacie:
     userPrompt = `Napisz nowy artykuł na bloga. Jest ${month} ${year}. Wymyśl interesujący temat związany z tym co teraz się dzieje w okolicy — sezon, pogoda, lokalne wydarzenia, szlaki które warto teraz odwiedzić, albo coś ciekawego co goście mogą robić w tej porze roku.`;
   }
 
-  console.log(`[OpenAI] Generating ${isB2B ? 'B2B' : 'B2C'} article for ${client.clientId}, past topics: ${pastTopics.length}${isB2B ? `, format: ${B2B_FORMATS[(new Date().getDate() + pastTopics.length) % B2B_FORMATS.length].name}` : ''}`);
+  console.log(`[OpenAI] Generating ${isB2B ? 'B2B' : 'B2C'} article for ${client.clientId}, past topics: ${pastTopics.length}${isB2B ? `, format: ${B2B_FORMATS[(new Date().getDate() + pastTopics.length) % B2B_FORMATS.length].name}, topic: ${B2B_TOPICS[(new Date().getMonth() + pastTopics.length) % B2B_TOPICS.length]}` : ''}`);
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
