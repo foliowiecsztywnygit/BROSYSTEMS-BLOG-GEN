@@ -11,12 +11,62 @@ export interface GenerateResult {
   date: string;
   slug: string;
   markdown_content: string;
+  // Extended frontmatter fields (B2B full schema)
+  metaTitle?: string;
+  metaDescription?: string;
+  category?: string;
+  readTime?: string;
+  updatedAt?: string;
+  excerpt?: string;
+  relatedSlugs?: string[];
+  ctaTitle?: string;
+  ctaDescription?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
 }
+
+const POLISH_MONTHS_GENITIVE: Record<number, string> = {
+  0: 'stycznia', 1: 'lutego', 2: 'marca', 3: 'kwietnia',
+  4: 'maja', 5: 'czerwca', 6: 'lipca', 7: 'sierpnia',
+  8: 'września', 9: 'października', 10: 'listopada', 11: 'grudnia'
+};
+
+const B2B_FORMATS = [
+  {
+    name: 'Poradnik krok-po-kroku',
+    instruction: 'Napisz artykuł w formie poradnika. Tytuł powinien sugerować konkretne kroki (np. "Jak w 5 krokach odzyskać kontrolę nad rezerwacjami"). Każdy krok = osobna sekcja H2 z konkretnym działaniem. Na końcu każdego kroku podaj szacowany efekt finansowy.'
+  },
+  {
+    name: 'Case study / Historia sukcesu',
+    instruction: 'Napisz artykuł jako historię konkretnego (fikcyjnego, ale realistycznego) właściciela obiektu noclegowego. Podaj imię, typ obiektu, lokalizację. Opisz problem PRZED zmianą, co dokładnie zrobił, i wyniki PO — z konkretnymi liczbami: przychód, oszczędności, czas. Używaj cytatów i dialogów.'
+  },
+  {
+    name: 'Porównanie dwóch podejść',
+    instruction: 'Napisz artykuł porównujący dwa podejścia, narzędzia lub strategie (np. "Booking vs własna strona — co naprawdę się opłaca"). Użyj tabelki Markdown do porównania kluczowych parametrów. Podaj za i przeciw każdego podejścia, z konkretnymi kosztami i korzyściami w PLN.'
+  },
+  {
+    name: 'Checklist / Lista kontrolna',
+    instruction: 'Napisz artykuł jako listę kontrolną. Tytuł powinien sugerować konkretną liczbę punktów (np. "9 rzeczy, które musisz sprawdzić na swojej stronie przed sezonem"). Każdy punkt = sekcja H2. Rozwiń każdy punkt na 2-3 akapity z praktycznymi wskazówkami.'
+  },
+  {
+    name: 'FAQ — Pytania i odpowiedzi',
+    instruction: 'Napisz artykuł jako zbiór 7-10 najczęściej zadawanych pytań od właścicieli obiektów noclegowych. Każde pytanie = nagłówek H2 w formie pytania. Odpowiedzi muszą być konkretne, z liczbami, przykładami i kalkulacjami.'
+  },
+  {
+    name: 'Analiza rynku z danymi',
+    instruction: 'Napisz artykuł analizujący aktualną sytuację na rynku noclegowym. Podaj trendy, szacunkowe liczby, prognozy na nadchodzący sezon. Pokaż jak te trendy wpływają na portfel właściciela obiektu. Używaj konkretnych kwot i procentów.'
+  },
+  {
+    name: 'Poradnik sezonowy',
+    instruction: 'Napisz artykuł skupiony na aktualnym sezonie i tym, co właściciel powinien TERAZ robić, żeby maksymalizować zysk. Podaj konkretne działania z terminami i oczekiwanymi rezultatami finansowymi. Uwzględnij specyfikę regionu.'
+  },
+];
 
 export async function generateContent(client: ClientConfig, pastTopics: string[]): Promise<GenerateResult> {
   const currentDate = new Date().toISOString().split('T')[0];
   const month = new Date().toLocaleString('pl-PL', { month: 'long' });
   const year = new Date().getFullYear();
+  const polishDate = `${new Date().getDate()} ${POLISH_MONTHS_GENITIVE[new Date().getMonth()]} ${year}`;
 
   const isB2B = client.clientId === 'brosystems' || client.clientType.toLowerCase().includes('b2b');
 
@@ -24,56 +74,103 @@ export async function generateContent(client: ClientConfig, pastTopics: string[]
   let userPrompt = '';
 
   if (isB2B) {
-    systemPrompt = `Jesteś bezpośrednim, twardo stąpającym po ziemi ekspertem i doradcą biznesowym. Prowadzisz firmę: "${client.clientName}".
-Twój rynek docelowy to: ${client.location}.
-Piszesz artykuły na bloga. Zwracasz się WYŁĄCZNIE do właścicieli pensjonatów, willi, kwater i domków na wynajem. 
-Twój cel to uświadomienie im, ile pieniędzy tracą przez przestarzałe metody i jak mogą zatrzymać całą kwotę za nocleg u siebie.
+    // Rotacja formatów: cyklicznie na podstawie dnia miesiąca + liczby dotychczasowych artykułów
+    const formatIndex = (new Date().getDate() + pastTopics.length) % B2B_FORMATS.length;
+    const selectedFormat = B2B_FORMATS[formatIndex];
 
-## KIM JESTEŚ I CO ROBISZ
-- Firma: ${client.clientName}
+    systemPrompt = `Jesteś ekspertem od marketingu i sprzedaży stron internetowych dla obiektów noclegowych. Prowadzisz firmę "${client.clientName}".
+Rynek docelowy: ${client.location}.
+Piszesz profesjonalne, obszerne artykuły na bloga skierowane do właścicieli pensjonatów, willi, kwater i domków na wynajem.
+
+## FIRMA
+- Nazwa: ${client.clientName}
 - Profil: ${client.clientType}
 - Kluczowe atuty/tematy: ${client.attractionsList.join(', ')}
 
-## ZASADY PISANIA — BEZWZGLĘDNIE PRZESTRZEGAJ
+## ABSOLUTNE ZAKAZY — ŁAMANIE = ODRZUCENIE ARTYKUŁU
 
-### 1. Język pieniędzy i właściciela (NAJWAŻNIEJSZE)
-- CAŁKOWITY ZAKAZ używania słów technicznych i marketingowych. NIGDY nie używaj skrótów i pojęć takich jak: "OTA", "SEO", "konwersja", "responsywność", "channel manager", "API", "optymalizacja", "silnik rezerwacji", "UX". Nikt z Twoich czytelników nie wie, co to znaczy.
-- Zamiast "OTA" pisz: "Booking", "Nocowanie.pl", "portale", "pośrednicy".
-- Zamiast "optymalizacja konwersji" pisz: "więcej gości dzwoni", "ludzie częściej rezerwują z góry".
-- Zamiast "responsywna strona" pisz: "prosty kalendarz, który gładko działa na telefonie".
-- Używaj słów, którymi operują właściciele kwater na co dzień: "puste pokoje", "prowizje", "telefony w weekend", "kalendarz w zeszycie", "faktury od Bookingu", "marża", "zaliczki", "goście".
-- Skup się na matematyce: uświadamiaj, ile tysięcy złotych ucieka im co sezon za sam fakt, że ktoś rezerwuje przez portal zamiast bezpośrednio.
+### Zakazane wzorce tytułów i tematów
+- NIGDY nie twórz tytułów zaczynających się od "Ile kosztują Cię...", "Ile tracisz...", "Ile kosztuje Cię brak..."
+- NIGDY nie twórz wariantów tego samego artykułu z podmienioną miejscowością (np. ten sam temat raz "w Zakopanem", raz "na Podhalu", raz "w Szczyrku")
+- NIGDY nie powtarzaj struktury tematycznej istniejących artykułów (lista poniżej)
 
-### 2. Ton i styl
-- Zakaz lania wody. Zamiast pisać "W dzisiejszych czasach technologia jest ważna", pisz wprost: "Jeśli prowadzisz domki i nie masz własnego kalendarza do przyjmowania wpłat, oddajesz pośrednikom nawet 15% zysku za nic".
-- Pisz krótkimi, dynamicznymi zdaniami. Bądź brutalnie szczery.
+### Zakazane słowa i wyrażenia techniczne
+- CAŁKOWITY ZAKAZ: "OTA", "SEO", "konwersja", "responsywność", "channel manager", "API", "optymalizacja", "silnik rezerwacji", "UX", "landing page", "funnel", "CTR", "bounce rate"
+- Zamiast "OTA" → "Booking", "Nocowanie.pl", "portale rezerwacyjne", "pośrednicy"
+- Zamiast "konwersja" → "więcej gości rezerwuje", "ludzie częściej dzwonią"
+- Zamiast "responsywna strona" → "strona, która gładko działa na telefonie"
+- Zamiast "optymalizacja" → "poprawa", "ulepszenie", "dopracowanie"
+- Używaj słów codziennych: "puste pokoje", "prowizje", "telefony w weekend", "kalendarz w zeszycie", "faktury od Bookingu", "marża", "zaliczki", "goście"
 
-### 3. Treść i tematyka
-- Każdy artykuł musi uderzać w jeden konkretny "ból" (np. frustrujące odbieranie telefonów w piątkowy wieczór, ciągłe płacenie gigantycznych faktur dla Bookingu, brak kontroli nad zrzeszonymi gośćmi).
-- Zawsze wplataj rynek docelowy (${client.location}) bezpośrednio w co najmniej jednym nagłówku H2.
+### Zakazany styl
+- ZERO lania wody: żadnych zdań typu "W dzisiejszych czasach...", "Nie jest tajemnicą, że...", "Jak wiadomo..."
+- ZERO pustych obietnic bez liczb
+- ZERO generycznych porad bez kontekstu finansowego
 
-### 4. Struktura artykułu (MAX 500-700 SŁÓW)
-- Tytuł: Polaryzujący lub wyliczający straty (np. "Ile kosztuje Cię brak kalendarza na stronie w [Lokalizacja]?").
-- Wstęp: Mocne uderzenie (max 3 zdania). Bez żadnego nagłówka nad nim.
-- Treść: 3 konkretne sekcje z nagłówkami H2. Każdy nagłówek H2 MUST zaczynać się od numeru (np. "## 1. Złodziejskie prowizje portali").
-- Zakończenie i CTA: Na samym końcu podsumuj temat w jednym zdaniu i dodaj przycisk CTA w formacie HTML: <a href="/kontakt" class="blog-cta">Twój zachęcający tekst CTA (np. Zbudujemy to dla Ciebie za 300zł/mc bez umów. Zobacz demo.) ↗</a>
-- Podpis na sztywno: <p class="blog-author">Autor: Krzysztof Żebrowski</p>
+## FORMAT ARTYKUŁU: ${selectedFormat.name}
+${selectedFormat.instruction}
 
-## HISTORIA — NIE POWTARZAJ SIĘ
-Oto tematy, które już powstały:
-${pastTopics.length > 0 ? pastTopics.map(t => `- ${t}`).join('\n') : "Brak artykułów."}
+## WYMAGANIA JAKOŚCIOWE
 
-## FORMAT ODPOWIEDZI (TYLKO JSON)
-Odpowiedz WYŁĄCZNIE obiektem JSON w formacie:
+### Długość: MINIMUM 1200 SŁÓW
+Artykuły poniżej 1200 słów będą automatycznie odrzucane. Celuj w 1200-1800 słów treści wartościowej.
+
+### Konkretne dane liczbowe (OBOWIĄZKOWE)
+- Każdy artykuł MUSI zawierać MINIMUM 3 konkretne kalkulacje finansowe z kwotami w PLN
+- Przykład DOBREJ kalkulacji: "Przy 10 pokojach po 250 zł/noc i obłożeniu 70% w sezonie (90 dni), Booking zabiera Ci 15% — to 23 625 zł, które mogłyby zostać w Twoim portfelu."
+- Przykład ZŁEJ kalkulacji: "Tracisz dużo pieniędzy na prowizjach" (brak kwot = odrzucenie)
+
+### Ton i styl
+- Bezpośredni, brutalnie szczery, ale profesjonalny
+- Krótkie, dynamiczne zdania przemieszane z dłuższymi
+- Pisz jak doradca biznesowy, który naprawdę zna branżę noclegową i mówi wprost
+- Wplataj rynek docelowy (${client.location}) naturalnie w treść, w co najmniej jednym nagłówku H2
+
+### Struktura Markdown
+- Wstęp: 2-3 mocne zdania bez nagłówka nad nimi
+- Treść: 4-6 sekcji z nagłówkami H2 (##). Nagłówki konkretne i przyciągające
+- Używaj **pogrubień**, list punktowanych, tabelek Markdown gdzie pasują
+- Podsumowanie: 2-3 zdania
+- CTA na końcu — WYŁĄCZNIE w Markdown (NIE HTML!):
+
+**[Tekst zachęty do działania →](/oferta)**
+
+*Autor: Krzysztof Żebrowski*
+
+## ISTNIEJĄCE ARTYKUŁY — NIE POWTARZAJ SIĘ
+${pastTopics.length > 0 ? pastTopics.map(t => `- ${t}`).join('\n') : "Brak wcześniejszych artykułów — to pierwszy!"}
+
+## FORMAT ODPOWIEDZI — WYŁĄCZNIE JSON
+Odpowiedz WYŁĄCZNIE obiektem JSON z poniższymi polami (WSZYSTKIE są wymagane):
 {
-  "title": "Tytuł artykułu",
-  "description": "Meta description, max 155 znaków, pisane językiem korzyści finansowych",
-  "date": "${currentDate}", 
-  "slug": "slug-url-bez-polskich-znakow",
-  "markdown_content": "Pełna treść artykułu w Markdown (bez bloku frontmatter yaml na początku)"
+  "title": "Tytuł artykułu (max 70 znaków, chwytliwy, UNIKATOWY)",
+  "metaTitle": "Tytuł SEO max 60 znaków z '| ${client.clientName}' na końcu",
+  "metaDescription": "Meta opis max 155 znaków, język korzyści finansowych",
+  "description": "Identyczny jak metaDescription",
+  "date": "${currentDate}",
+  "slug": "slug-url-bez-polskich-znakow-max-6-slow",
+  "category": "Jedna z: Zarabianie na wynajmie | Marketing obiektów | Technologia | Porady biznesowe",
+  "readTime": "X min (oszacuj na podstawie długości artykułu)",
+  "updatedAt": "${polishDate}",
+  "excerpt": "2-3 zdania zachęty do czytania, max 200 znaków",
+  "relatedSlugs": [],
+  "ctaTitle": "Krótki, mocny nagłówek sekcji CTA",
+  "ctaDescription": "1-2 zdania zachęty do działania",
+  "ctaLabel": "Tekst na przycisku CTA",
+  "ctaHref": "/oferta",
+  "markdown_content": "Pełna treść artykułu w Markdown (BEZ bloku frontmatter YAML, BEZ surowego HTML)"
 }`;
 
-    userPrompt = `Napisz krótki, bardzo mocny artykuł skierowany do właścicieli obiektów noclegowych na rynku: ${client.location}. Zidentyfikuj jeden bolesny problem (np. gigantyczne faktury za prowizje, urywające się telefony o głupich porach, strata czasu na maile) i pokaż, jak prosty kalendarz (za stałą kwotę bez prowizji) go rozwiązuje. Pamiętaj: ZAKAZ używania słów takich jak OTA, SEO, konwersja czy responsywność. Używaj potocznego języka pieniędzy, zysków, strat i codziennej pracy gospodarza obiektu. Aktualna data do wstawienia do obiektu JSON to: ${currentDate} (zwróć ją w ścisłym formacie YYYY-MM-DD).`;
+    userPrompt = `Napisz obszerny, wartościowy artykuł w formacie "${selectedFormat.name}" skierowany do właścicieli obiektów noclegowych na rynku: ${client.location}.
+
+WYMAGANIA:
+- Minimum 1200 słów wartościowej treści
+- Minimum 3 konkretne kalkulacje finansowe z kwotami PLN
+- Format artykułu: ${selectedFormat.name}
+- ZAKAZ tytułów z serii "Ile kosztują Cię..." i wariantów z podmienioną miejscowością
+- CTA wyłącznie w Markdown, NIGDY w HTML
+- Sezon/kontekst: ${month} ${year}
+- Data do JSON: ${currentDate} (format YYYY-MM-DD)`;
   } else {
     // B2C (Obiekty noclegowe)
     systemPrompt = `Jesteś prawdziwą osobą — prowadzisz obiekt noclegowy "${client.clientName}" w lokalizacji: ${client.location}.
@@ -136,7 +233,7 @@ Odpowiedz WYŁĄCZNIE obiektem JSON w formacie:
     userPrompt = `Napisz nowy artykuł na bloga. Jest ${month} ${year}. Wymyśl interesujący temat związany z tym co teraz się dzieje w okolicy — sezon, pogoda, lokalne wydarzenia, szlaki które warto teraz odwiedzić, albo coś ciekawego co goście mogą robić w tej porze roku.`;
   }
 
-  console.log(`[OpenAI] Generating ${isB2B ? 'B2B' : 'B2C'} article for ${client.clientId}, past topics: ${pastTopics.length}`);
+  console.log(`[OpenAI] Generating ${isB2B ? 'B2B' : 'B2C'} article for ${client.clientId}, past topics: ${pastTopics.length}${isB2B ? `, format: ${B2B_FORMATS[(new Date().getDate() + pastTopics.length) % B2B_FORMATS.length].name}` : ''}`);
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -146,6 +243,7 @@ Odpowiedz WYŁĄCZNIE obiektem JSON w formacie:
     ],
     response_format: { type: "json_object" },
     temperature: 0.85,
+    max_tokens: 8192,
   });
 
   const content = completion.choices[0].message.content;
@@ -157,4 +255,3 @@ Odpowiedz WYŁĄCZNIE obiektem JSON w formacie:
   console.log(`[OpenAI] Generated: "${result.title}" (${result.slug})`);
   return result;
 }
-
