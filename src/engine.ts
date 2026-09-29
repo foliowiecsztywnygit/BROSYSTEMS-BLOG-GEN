@@ -11,7 +11,7 @@ export async function runClientJob(client: ClientConfig, isRetry: boolean = fals
 
   try {
     // 1. Get history
-    const pastTopics = await getRecentTopics(client.clientId, 10);
+    const pastTopics = await getRecentTopics(client.clientId, 50);
     console.log(`${logPrefix} Loaded ${pastTopics.length} past topics.`);
 
     // 2. Generate Content
