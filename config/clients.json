@@ -152,5 +152,28 @@
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 9 * * *",
     "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=x109wxyuyqzts63p784w6za2&force=false"
+  },
+  {
+    "clientId": "zamek-bieszczady",
+    "clientName": "Obiekt Zamek Bieszczady",
+    "clientType": "pokoje gościnne i domki nad rzeką",
+    "location": "Bieszczady (8 km od Bieszczadzkiego Parku Narodowego, 15 km od Soliny)",
+    "attractionsList": [
+      "Bieszczadzki Park Narodowy (8 km)",
+      "Zapora Wodna w Solinie (15 km)",
+      "Bieszczadzka Kolej Leśna",
+      "Strumyk / rzeka obok obiektu"
+    ],
+    "keywords": [
+      "noclegi bieszczady",
+      "pokoje gościnne bieszczady",
+      "noclegi nad rzeką bieszczady",
+      "agroturystyka bieszczady",
+      "zamek bieszczady"
+    ],
+    "githubRepo": "foliowiecsztywnygit/zamek",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 10 * * 2",
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=hnnzx6tx9tqr8s6omels1xpt&force=false"
   }
 ]
