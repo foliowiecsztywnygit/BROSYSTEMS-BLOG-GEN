@@ -175,5 +175,33 @@
     "destinationFolder": "src/content/blog",
     "cronSchedule": "0 10 * * 2",
     "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=hnnzx6tx9tqr8s6omels1xpt&force=false"
+  },
+  {
+    "clientId": "mlynowka-domek-przy-mlynie",
+    "clientName": "Młynówka — Domek przy Młynie",
+    "clientType": "całoroczny drewniany domek 70 m² w stylu nowoczesnej stodoły na wyłączność z ponad 1 ha ogrodu i potokiem",
+    "location": "Krościenko nad Dunajcem, ul. Grotowskiego 14, Pieniny, woj. małopolskie",
+    "attractionsList": [
+      "Żółty szlak turystyczny na Trzy Korony, Sokolicę i Zamkową Górę (bezpośrednio spod domku)",
+      "Spływ Przełomem Dunajca na tratwach flisackich (odbiór busem spod samej bramy domku)",
+      "Droga Pienińska i trasa rowerowa do Szczawnicy (5 km) oraz Czerwonego Klasztoru na Słowacji",
+      "Zabytkowy drewniany młyn wodny oraz prywatna młynówka z potokiem i stawem na terenie posesji",
+      "Rynek w Krościenku nad Dunajcem, regionalne restauracje i sklepy (600 m / 10 min pieszo)",
+      "Pieniński Park Narodowy z unikalną florą i fauną (tuż za progiem domku)"
+    ],
+    "keywords": [
+      "domek do wynajęcia Krościenko nad Dunajcem",
+      "Młynówka domek przy młynie Pieniny",
+      "nocleg Krościenko szlak Trzy Korony",
+      "całoroczny domek w Pieninach z ogrodem",
+      "domek z potokiem i placem zabaw Pieniny",
+      "spływ Dunajcem noclegi dla rodzin",
+      "domek na wyłączność Krościenko nad Dunajcem",
+      "workation Pieniny szybki internet"
+    ],
+    "githubRepo": "foliowiecsztywnygit/mlynowka-domek-przy-mlynie",
+    "destinationFolder": "src/content/blog",
+    "cronSchedule": "0 9 * * 3",
+    "deployWebhookUrl": "http://51.68.130.22:8000/api/v1/deploy?uuid=ghcpv0y9nxztqx1e86cytnhe&force=false"
   }
 ]
