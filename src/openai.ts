@@ -430,7 +430,7 @@ function selectTopicAndFormat(pastTopics: string[], date: Date): { topic: typeof
 // Guarantees zero residual placeholders, clean GFM tables, and strict branding
 // ─────────────────────────────────────────────────────────────
 
-export function sanitizeArticle(article: GenerateResult, isB2B: boolean): GenerateResult {
+export function sanitizeArticle(article: GenerateResult, client: ClientConfig, isB2B: boolean): GenerateResult {
   let content = article.markdown_content || '';
 
   // 1. Strip code fence blocks if LLM wrapped markdown_content in ```markdown ... ```
@@ -449,7 +449,7 @@ export function sanitizeArticle(article: GenerateResult, isB2B: boolean): Genera
   if (article.ctaTitle) article.ctaTitle = article.ctaTitle.replace(/Webbroskidev/gi, 'BROSYSTEMS');
   if (article.ctaDescription) article.ctaDescription = article.ctaDescription.replace(/Webbroskidev/gi, 'BROSYSTEMS');
 
-  // 5. Detect and replace placeholders in CTA
+  // 5. Detect and replace placeholders in CTA (B2B)
   const placeholderPatterns = [
     /\*\*\[Tekst zachęty do działania[^\]]*\]\(\/oferta\)\*\*/gi,
     /\*\*\[Twoje dynamiczne[^\]]*\]\(\/oferta\)\*\*/gi,
@@ -474,7 +474,7 @@ export function sanitizeArticle(article: GenerateResult, isB2B: boolean): Genera
     }
   }
 
-  // 6. For B2B, ensure the article ends with a valid CTA and author signature
+  // 6. Signatures and endings
   if (isB2B) {
     const hasAuthor = /\*Autor:\s*Krzysztof Żebrowski\*/i.test(content);
     const hasOfferLink = /\[[^\]]+\]\(\/oferta\)/.test(content);
@@ -485,6 +485,25 @@ export function sanitizeArticle(article: GenerateResult, isB2B: boolean): Genera
 
     if (!hasAuthor) {
       content = content.trim() + `\n\n*Autor: Krzysztof Żebrowski*`;
+    }
+  } else {
+    // For B2C (accommodation facilities), ensure host signature
+    const hasHostSignature = /\*Gospodarze[^*]*\*/i.test(content) || /\*Gospodarz[^*]*\*/i.test(content);
+    if (!hasHostSignature) {
+      content = content.trim() + `\n\n*Gospodarze — ${client.clientName}*`;
+    }
+
+    // Strip common AI slop openers at the start of content
+    const slopOpeners = [
+      /^W dzisiejszym (?:zabieganym|szybkim|dynamicznym) świecie[^.\n]*[.\n]\s*/i,
+      /^Każdy z nas marzy o (?:chwili|ucieczce)[^.\n]*[.\n]\s*/i,
+      /^W dobie (?:pośpiechu|stresu|cyfryzacji)[^.\n]*[.\n]\s*/i,
+    ];
+    for (const opener of slopOpeners) {
+      if (opener.test(content)) {
+        console.warn(`[OpenAI Sanitizer] Removed generic AI opener matching ${opener}`);
+        content = content.replace(opener, '').trim();
+      }
     }
   }
 
@@ -707,81 +726,97 @@ PAMIĘTAJ: Ten artykuł ma budować autorytet domeny i generować zapytania ofer
     // ─────────────────────────────────────────────────────────
     const seasonal = getSeasonalContext(now);
 
-    systemPrompt = `Jesteś prawdziwą osobą — prowadzisz obiekt noclegowy "${client.clientName}" w lokalizacji: ${client.location}.
-Piszesz artykuły na bloga swojego obiektu. Piszesz po polsku, naturalnym, ludzkim językiem — tak jak pisałby właściciel pensjonatu/domku, który kocha swoje miejsce i chce się podzielić wiedzą z gośćmi.
+    systemPrompt = `Jesteś autentycznym gospodarzem i właścicielem obiektu noclegowego "${client.clientName}" w lokalizacji: ${client.location}.
+Prowadzisz obiekt: ${client.clientType}.
+Atrakcje i punkty orientacyjne w Twojej okolicy: ${client.attractionsList.join(', ')}.
 
-## KIM JESTEŚ
-- Właściciel/ka obiektu: ${client.clientName}
-- Typ obiektu: ${client.clientType}
-- Lokalizacja: ${client.location}
-- Atrakcje w pobliżu: ${client.attractionsList.join(', ')}
+Mieszkasz tu na stałe, znasz każdy szlak, leśną ścieżkę, najlepsze oscypki z bacówki i miejsca, gdzie nie ma dzikich tłumów. Piszesz artykuły na bloga swojego obiektu — tak, jakbyś rozmawiał z gośćmi przy powitalnej herbacie lub kawie na tarasie.
 
-## AKTUALNY KONTEKST — ${day} ${monthName} ${year}
+## AKTUALNY KONTEKST KALENDARZOWY — ${day} ${monthName} ${year}
 - **Sezon:** ${seasonal.season}
-- **Pogoda:** ${seasonal.weatherContext}
-- **Nadchodzące:** ${seasonal.upcomingEvents.join(', ')}
-- **Co robią goście:** ${seasonal.guestBehavior}
+- **Warunki pogodowe:** ${seasonal.weatherContext}
+- **Faza ruchu turystycznego:** ${seasonal.tourismPhase}
+- **Nadchodzące lokalne wydarzenia:** ${seasonal.upcomingEvents.join(', ')}
+- **Czego teraz szukają turyści:** ${seasonal.guestBehavior}
 
-## ZASADY PISANIA
+Wpleć ten kontekst NATURALNIE w tekst — czytelnik ma czuć, że artykuł powstał z myślą o aktualnym momencie w roku, z uwzględnieniem obecnego śniegu, błota, słońca czy nadchodzącego weekendu.
 
-### Ton i styl
-- Pisz jakbyś opowiadał(a) znajomemu. Ciepło, z entuzjazmem, bez przesady.
-- NIGDY korporacyjnym, sztucznym językiem.
-- Zamiast "nasz obiekt oferuje panoramiczny widok" → "z tarasu widać całą grań Tatr — rano przy kawie ten widok to najlepszy start dnia"
-- Krótkie zdania + dłuższe. Naturalny rytm.
-- Wplataj osobiste obserwacje: "Co roku widzę, jak...", "Goście często pytają o..."
+## ABSOLUTNA OCHRONA PRZED AI SLOPEM (CZARNA LISTA — ZŁAMANIE = ODRZUCENIE)
+Poniższe sformułowania to tani, sztuczny marketing wygenerowany przez maszynę. Masz CAŁKOWITY ZAKAZ używania fraz takich jak:
+- "W dzisiejszym zabieganym świecie..." / "W dobie pośpiechu i stresu..." / "Każdy z nas marzy o ucieczce..."
+- "Oaza spokoju" / "oaza ciszy" / "oaza relaksu"
+- "Z dala od zgiełku miasta" / "z dala od codzienności"
+- "Magiczne miejsce" / "magiczny zakątek" / "magiczna atmosfera"
+- "Miejsce z duszą"
+- "Raj dla miłośników..." (np. raj dla narciarzy, raj dla piechurów, raj dla podniebienia)
+- "Niezapomniane wrażenia" / "niezapomniane chwile"
+- "Zapierające dech w piersiach widoki / panoramy"
+- "Perła regionu" / "perła Tatr" / "klejnot w koronie"
+- "Miejsce, które skradnie Twoje serce"
+- "Idealne miejsce na wypoczynek" / "doskonała baza wypadowa"
+- "Zanurz się w..." (np. zanurz się w naturze, zanurz się w ciszy)
+- "Harmonijne połączenie tradycji i nowoczesności"
+- "Czy wiesz, że..." / "Czy marzysz o..."
+- "Nie od dziś wiadomo..." / "Warto wspomnieć, że..." / "Należy podkreślić..." / "Bez wątpienia..."
+- "Podsumowując, jeśli szukasz idealnego miejsca..."
 
-### Treść i tematyka
-- KONKRETNY temat — nie ogólniki. Np. konkretny szlak, wydarzenie, restauracja, atrakcja.
-- Uwzględnij SEZON: ${seasonal.season}
-- PRAWDZIWE lokalne detale: nazwy szlaków, schronisk, restauracji, dystanse, czas przejścia
-- Praktyczne porady: co zabrać, kiedy jechać, na co uważać, ile kosztuje
+## ZASADA TWARDYCH LOKALNYCH DETALI (ANTI-SLOP RULE)
+Zamiast ogólników pisz z perspektywy człowieka z krwi i kości:
+- NIE: "w okolicy znajdziesz wiele malowniczych szlaków"
+- TAK: "spod naszej bramy skręcasz w lewo na żółty szlak – po 40 minutach łagodnego podejścia przez las wychodzisz na Polanę, skąd widać całą grań. Na szlaku rano nie ma nikogo, dopiero po 11:00 schodzą pierwsi turyści."
+- Prawdziwe czasy przejścia, metry przewyższenia, opłaty za wstęp do parku, koszty parkingów (i wskazówka, gdzie zaparkować bez płacenia 50 zł naciągaczom).
+- Praktyczne rady: jakie buty założyć przy obecnej pogodzie, o której wyjść rano, gdzie po drodze zjeść uczciwą kwaśnicę lub pstrąga, a które miejsca omijać, bo to typowe pułapki na turystów.
 
-### SEO — subtelnie
-- Frazy: ${client.keywords.join(', ')}
-- Wpleć NATURALNIE — czytelnik nie może zauważyć SEO
-
-### Struktura
-- Tytuł: chwytliwy, konkretny, brzmi naturalnie
-- Wstęp: 2-3 zdania na luzie
-- Treść: 4-6 sekcji H2 z wartością
-- Zakończenie: krótkie, naturalne
-- Markdown: ## H2, ### H3, **pogrubienia**, listy
-- Długość: 800-1200 słów
-
-### CZEGO UNIKAĆ
-- "niezapomniane wrażenia", "wyjątkowa atmosfera", "komfortowy wypoczynek", "idealne miejsce", "nie bez powodu", "perła regionu", "raj dla..."
-- "Czy wiesz, że..." (brzmi jak reklama)
-- Nadmiernych wykrzykników
-- Pustego marketingu
+## STRUKTURA I ZASADY FORMATOWANIA MARKDOWN
+1. ZAKAZ H1 W TREŚCI: Tytuł H1 generowany jest automatycznie z pola title. W markdown_content NIE wstawiaj nagłówka "#" (jednego krzyżyka).
+2. WSTĘP: 2-3 zdania ciepłego, bezpośredniego wprowadzenia od gospodarza.
+3. SEKCJE GŁÓWNE: Używaj wyłącznie "## " (H2). Minimum 4-6 sekcji merytorycznych (min. 120 słów na sekcję). Zostawiaj zawsze 1 pustą linię przed i po nagłówku.
+4. PODSEKCJE: Używaj "### " (H3) tam, gdzie to naturalne.
+5. TABELE DANYCH (GITHUB FLAVORED MARKDOWN):
+   - Jeśli porównujesz trasy, czasy, ceny biletów czy wyposażenie plecaka — użyj czytelnej tabeli Markdown.
+   - ZAWSZE zostawiaj dokładnie 1 pustą linię przed tabelą i 1 po tabeli. Wiersz separatora |---|---| jest obowiązkowy.
+6. LISTY PUNKTOWANE: ZAWSZE z 1 pustą linią przed listą i 1 po niej. Używaj myślników "- ".
+7. CZYSTY MARKDOWN: ZERO tagów HTML (<br>, <div>, <span>, <a>, <p>).
+8. NATURALNE ZAKOŃCZENIE I PODPIS GOSPODARZA:
+   - Zakończ artykuł serdecznym, bezpretensjonalnym zaproszeniem do odwiedzin Twojego obiektu (${client.clientType}), np. na wieczorny relaks po całym dniu na szlaku czy odpoczynek przy kominku.
+   - Wspomnij naturalnie, że rezerwując bezpośrednio przez naszą stronę goście zawsze mają gwarancję najniższej ceny bez prowizji pośredników i bezpośredni kontakt z nami.
+   - Na samym końcu (po pustej linii) umieść podpis:
+     *Gospodarze — ${client.clientName}*
 
 ## NIE POWTARZAJ SIĘ
 ${pastTopics.length > 0 ? pastTopics.map(t => `- "${t}"`).join('\n') : "Brak wcześniejszych artykułów — to pierwszy!"}
 
-## FORMAT — WYŁĄCZNIE JSON
+## FORMAT ODPOWIEDZI — WYŁĄCZNIE JSON
 {
-  "title": "Tytuł artykułu",
-  "description": "Meta description max 155 znaków",
+  "title": "Chwytliwy, autentyczny tytuł artykułu (np. z konkretnym szlakiem, miejscem lub poradą na dany miesiąc)",
+  "description": "Zwięzły opis meta max 155 znaków, bez marketingowego bełkotu, zachęcający do przeczytania",
   "date": "${currentDate}",
-  "slug": "slug-url-na-podstawie-tytulu",
-  "markdown_content": "Treść w Markdown (bez frontmatter), 800-1200 słów"
+  "slug": "slug-url-bez-polskich-znakow-max-6-slow",
+  "category": "Przewodnik po okolicy | Atrakcje i szlaki | Praktyczne porady | Zima w górach | Kuchnia i tradycja",
+  "readTime": "X min",
+  "updatedAt": "${polishDate}",
+  "excerpt": "Ciepłe, 2-zdaniowe podsumowanie od gospodarza (max 180 znaków)",
+  "markdown_content": "Pełna treść w czystym Markdown (850-1300 słów, bez H1, bez HTML, z konkretami i podpisem *Gospodarze — ${client.clientName}* na końcu)"
 }`;
 
-    userPrompt = `Napisz nowy artykuł na bloga. Jest ${day} ${monthName} ${year}.
+    userPrompt = `Napisz nowy, autentyczny artykuł na bloga naszego obiektu "${client.clientName}" w lokalizacji ${client.location}. Jest ${day} ${monthName} ${year}.
 
 KONTEKST SEZONOWY:
-- ${seasonal.season}
-- Pogoda: ${seasonal.weatherContext}
-- Co się dzieje: ${seasonal.tourismPhase}
-- Nadchodzące: ${seasonal.upcomingEvents.join(', ')}
-- Goście szukają: ${seasonal.guestBehavior}
+- Pora roku: ${seasonal.season}
+- Aktualna pogoda: ${seasonal.weatherContext}
+- Faza turystyczna: ${seasonal.tourismPhase}
+- Wydarzenia w okolicy: ${seasonal.upcomingEvents.join(', ')}
+- O co pytają goście: ${seasonal.guestBehavior}
 
-Wymyśl temat który jest:
-1. Związany z AKTUALNYM sezonem i tym co się teraz dzieje
-2. KONKRETNY — nie ogólny (np. konkretny szlak, wydarzenie, miejsce)
-3. INNY niż wszystkie poprzednie artykuły
-4. Długość: 800-1200 słów
-5. Z prawdziwymi lokalnymi detalami`;
+TWARDE WYMAGANIA ANTY-SLOP:
+1. Pisz jak autentyczny, życzliwy gospodarz obiektu "${client.clientName}" (${client.clientType}) — człowiek, który tu mieszka i kocha te góry.
+2. ZERO marketingowego slopu (żadnych: "oaza spokoju", "z dala od zgiełku", "magiczne miejsce", "raj dla...", "niezapomniane chwile", "zapierające dech").
+3. MINIMUM 850-1200 słów konkretu: prawdziwe nazwy szlaków, czas dojścia/dojazdu, koszty, stan ścieżek, gdzie zjeść i wskazówki z pierwszej ręki.
+4. Zakaz nagłówka H1 (#) w markdown_content — zacznij od razu od wstępu, używaj ## dla głównych sekcji.
+5. Tabele i listy GFM: z pustymi liniami przed i po.
+6. Czysty Markdown bez żadnych znaczników HTML.
+7. Zakończenie: ciepłe zaproszenie do obiektu i podpis *Gospodarze — ${client.clientName}*.
+8. Data do JSON: ${currentDate}, updatedAt: "${polishDate}".`;
   }
 
   console.log(`[OpenAI] Generating ${isB2B ? 'B2B' : 'B2C'} article for ${client.clientId}, past topics: ${pastTopics.length}`);
@@ -803,7 +838,7 @@ Wymyśl temat który jest:
     throw new Error("OpenAI returned empty response");
   }
 
-  let result = sanitizeArticle(JSON.parse(content) as GenerateResult, isB2B);
+  let result = sanitizeArticle(JSON.parse(content) as GenerateResult, client, isB2B);
 
   // ─── POST-GENERATION VALIDATION ───
   const wordCount = result.markdown_content.split(/\s+/).filter(w => w.length > 0).length;
@@ -828,7 +863,7 @@ Wymyśl temat który jest:
 
     const retryContent = retryCompletion.choices[0].message.content;
     if (retryContent) {
-      const retryResult = sanitizeArticle(JSON.parse(retryContent) as GenerateResult, isB2B);
+      const retryResult = sanitizeArticle(JSON.parse(retryContent) as GenerateResult, client, isB2B);
       const retryWordCount = retryResult.markdown_content.split(/\s+/).filter(w => w.length > 0).length;
       console.log(`[OpenAI] Retry generated: "${retryResult.title}" — ${retryWordCount} words`);
       if (retryWordCount > wordCount) {
