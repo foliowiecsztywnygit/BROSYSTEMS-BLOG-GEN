@@ -426,6 +426,99 @@ function selectTopicAndFormat(pastTopics: string[], date: Date): { topic: typeof
 }
 
 // ─────────────────────────────────────────────────────────────
+// ARTICLE SANITIZER & ARTIFACT REMOVER
+// Guarantees zero residual placeholders, clean GFM tables, and strict branding
+// ─────────────────────────────────────────────────────────────
+
+export function sanitizeArticle(article: GenerateResult, isB2B: boolean): GenerateResult {
+  let content = article.markdown_content || '';
+
+  // 1. Strip code fence blocks if LLM wrapped markdown_content in ```markdown ... ```
+  content = content.replace(/^```(?:markdown)?\s*\r?\n?/i, '').replace(/\r?\n?```\s*$/i, '');
+
+  // 2. Strip accidental YAML frontmatter if LLM put --- ... --- inside markdown_content
+  content = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+
+  // 3. Strip initial # Heading (H1) if present
+  content = content.replace(/^#\s+[^\r\n]+\r?\n+/, '');
+
+  // 4. Ensure Webbroskidev is strictly replaced by BROSYSTEMS everywhere
+  content = content.replace(/Webbroskidev/gi, 'BROSYSTEMS');
+  if (article.title) article.title = article.title.replace(/Webbroskidev/gi, 'BROSYSTEMS');
+  if (article.metaTitle) article.metaTitle = article.metaTitle.replace(/Webbroskidev/gi, 'BROSYSTEMS');
+  if (article.ctaTitle) article.ctaTitle = article.ctaTitle.replace(/Webbroskidev/gi, 'BROSYSTEMS');
+  if (article.ctaDescription) article.ctaDescription = article.ctaDescription.replace(/Webbroskidev/gi, 'BROSYSTEMS');
+
+  // 5. Detect and replace placeholders in CTA
+  const placeholderPatterns = [
+    /\*\*\[Tekst zachęty do działania[^\]]*\]\(\/oferta\)\*\*/gi,
+    /\*\*\[Twoje dynamiczne[^\]]*\]\(\/oferta\)\*\*/gi,
+    /\*\*\[Twoje perswazyjne[^\]]*\]\(\/oferta\)\*\*/gi,
+    /\*\*\[\[?CTA\]?\]\(\/oferta\)\*\*/gi,
+    /\*\*\[\[?Link\]?\]\(\/oferta\)\*\*/gi,
+    /\*\*\[\[?Tw[oó]j tekst\]?\]\(\/oferta\)\*\*/gi,
+    /\[Tekst zachęty do działania[^\]]*\]\(\/oferta\)/gi,
+    /\[Twoje dynamiczne[^\]]*\]\(\/oferta\)/gi,
+    /\[Twoje perswazyjne[^\]]*\]\(\/oferta\)/gi,
+    /\[\[?CTA\]?\]\(\/oferta\)/gi,
+    /\[\[?Link\]?\]\(\/oferta\)/gi,
+    /\[\[?Tw[oó]j tekst\]?\]\(\/oferta\)/gi,
+  ];
+
+  const defaultCta = `**[Zbuduj stronę WWW, która przynosi bezpośrednie rezerwacje bez prowizji →](/oferta)**`;
+
+  for (const pattern of placeholderPatterns) {
+    if (pattern.test(content)) {
+      console.warn(`[OpenAI Sanitizer] Detected placeholder CTA matching ${pattern}. Replacing with high-converting CTA.`);
+      content = content.replace(pattern, defaultCta);
+    }
+  }
+
+  // 6. For B2B, ensure the article ends with a valid CTA and author signature
+  if (isB2B) {
+    const hasAuthor = /\*Autor:\s*Krzysztof Żebrowski\*/i.test(content);
+    const hasOfferLink = /\[[^\]]+\]\(\/oferta\)/.test(content);
+
+    if (!hasOfferLink) {
+      content = content.trim() + `\n\n${defaultCta}`;
+    }
+
+    if (!hasAuthor) {
+      content = content.trim() + `\n\n*Autor: Krzysztof Żebrowski*`;
+    }
+  }
+
+  // 7. Sanitize relatedSlugs
+  if (article.relatedSlugs && Array.isArray(article.relatedSlugs)) {
+    article.relatedSlugs = article.relatedSlugs.filter(slug => {
+      if (!slug || slug.includes('slug-istniejacego') || slug.includes('slug-1') || slug.includes('twoj-slug')) {
+        return false;
+      }
+      return /^[a-z0-9-]+$/.test(slug);
+    });
+  }
+
+  // 8. Sanitize slug: no Polish diacritics, lowercase, kebab-case
+  if (article.slug) {
+    article.slug = article.slug
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ł/g, 'l')
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  // 9. Format GFM tables: ensure empty line before and after tables
+  content = content.replace(/([^\n])\r?\n(\|.+?\|[\r\t ]*\r?\n\|[-: |]+?\|)/g, '$1\n\n$2');
+  content = content.replace(/(\|.+?\|)\r?\n([^\r\n|])/g, '$1\n\n$2');
+
+  article.markdown_content = content;
+  return article;
+}
+
+// ─────────────────────────────────────────────────────────────
 // MAIN GENERATION FUNCTION
 // ─────────────────────────────────────────────────────────────
 
@@ -452,20 +545,14 @@ export async function generateContent(client: ClientConfig, pastTopics: string[]
 
     console.log(`[OpenAI] B2B selection — Topic: "${selectedTopic.topic}" (cluster: ${selectedTopic.cluster}), Format: "${selectedFormat.name}"`);
 
-    systemPrompt = `Jesteś doświadczonym dziennikarzem branżowym i doradcą biznesowym specjalizującym się w polskim rynku noclegowym. Piszesz dla firmy "${client.clientName}".
+    systemPrompt = `Jesteś elitarnym copywriterem, strategiem marketingu i ekspertem branży Hospitality w agencji technologicznej BROSYSTEMS (brosystems.pl), prowadzonej przez Krzysztofa Żebrowskiego. Piszesz dla firmy "${client.clientName}".
 Rynek docelowy: ${client.location}.
 
-## TWOJA ROLA
-Nie jesteś copywriterem który produkuje byle jakie treści. Jesteś ekspertem, który:
-- Zna realia polskiego rynku noclegowego od podszewki
-- Operuje konkretnymi liczbami, stawkami, marżami
-- Pisze artykuły które właściciele pensjonatów CHCĄ czytać bo wyciągają z nich wartość
-- Buduje autorytet firmy ${client.clientName} jako wiarygodnego partnera
-
-## FIRMA
-- Nazwa: ${client.clientName}
-- Profil: ${client.clientType}
-- Kluczowe kompetencje: ${client.attractionsList.join(', ')}
+## BRANDING I TONE OF VOICE:
+- Nazwa agencji: WYŁĄCZNIE "BROSYSTEMS" (CAŁKOWITY ZAKAZ używania nazwy "Webbroskidev").
+- Autor: Krzysztof Żebrowski.
+- Styl: Praktyczny, konkretny, biznesowy, bez lania wody i taniego marketingu. Liczby, kalkulacje, realne scenariusze, psychologia gości, technologia (strony WWW, zamki szyfrowe, cenniki dynamiczne, SEO, integracje OTA).
+- Twarde dane: Każdy artykuł MUSI zawierać MINIMUM 3-4 realne kalkulacje finansowe w PLN (np. stawki prowizji 18% OTA vs 0% prowizji z własnej strony, koszty pustostanów, ROI z self check-in, dynamiczne ceny).
 
 ## AKTUALNY KONTEKST — ${day} ${monthName} ${year}
 - **Sezon:** ${seasonal.season}
@@ -494,8 +581,8 @@ ${BANNED_TITLE_PATTERNS.map(p => `- NIGDY: "${p}..."`).join('\n')}
   * "ROI" → "zwrot z inwestycji", "ile to zarobi vs ile kosztuje"
 - Słowa codzienne: "puste pokoje", "prowizje", "telefony w weekend", "faktury od Bookingu", "marża", "zaliczki", "goście"
 
-### Zakazany styl
-- ZERO lania wody: żadnych "W dzisiejszych czasach...", "Nie jest tajemnicą...", "Jak wiadomo..."
+### Zakazany styl (AI Clichés)
+- ZERO lania wody: żadnych "W dzisiejszych czasach...", "Nie jest tajemnicą...", "Jak wiadomo...", "Kluczem do sukcesu jest...", "W dobie cyfryzacji..."
 - ZERO pustych obietnic bez liczb
 - ZERO generycznych porad bez kontekstu finansowego
 - NIGDY nie kończ akapitu na ogólnikach — zawsze podaj liczbę, kwotę, procent lub konkretny przykład
@@ -523,17 +610,41 @@ Artykuły poniżej 1000 słów będą odrzucane. Licz realne słowa w markdown_c
 - Osobiste obserwacje: "Widzę to u moich klientów...", "Z doświadczenia wiem, że..."
 - Wplataj rynek docelowy (${client.location}) naturalnie w co najmniej 2 nagłówkach H2
 
-### Struktura Markdown
-- Wstęp: 3-4 mocne zdania BEZ nagłówka. Wciągnij czytelnika od pierwszego zdania
-- Treść: 5-8 sekcji z nagłówkami H2 (##). Każda sekcja min. 120 słów
-- W sekcjach używaj: **pogrubień**, list punktowanych, tabelek Markdown
-- Podsekcje z H3 (###) tam gdzie to naturalne
-- Podsumowanie: 3-4 zdania ze wnioskami + jedno pytanie retoryczne
-- CTA na końcu — WYŁĄCZNIE w Markdown:
+### Zasady struktury Markdown (markdown_content)
+1. ZAKAZ H1 W TREŚCI: Główny nagłówek H1 jest generowany automatycznie z pola title. W markdown_content NIGDY nie używaj nagłówka "#" (jednego krzyżyka). Treść zacznij bezpośrednio od mocnego akapitu wstępnego.
+2. SEKCJE GŁÓWNE: Używaj wyłącznie "## " (H2). Minimum 5 sekcji merytorycznych, każda min. 120 słów. Zostawiaj zawsze 1 pustą linię przed nagłówkiem i 1 po nagłówku.
+3. PODSEKCJE: Używaj "### " (H3) tam gdzie to naturalne.
+4. TABELE DANYCH (GITHUB FLAVORED MARKDOWN):
+   - W każdym artykule umieść co najmniej 1 czytelną tabelę zestawiającą liczby, koszty lub warianty.
+   - ZAWSZE zostawiaj DOKŁADNIE JEDNĄ PUSTĄ LINIĘ przed tabelą i DOKŁADNIE JEDNĄ PUSTĄ LINIĘ po tabeli.
+   - Wiersz nagłówka i separator |---|---| są obowiązkowe. Komórki nie mogą zawierać znaków nowej linii (\n).
+5. LISTY PUNKTOWANE:
+   - ZAWSZE zostawiaj 1 pustą linię przed rozpoczęciem listy i 1 po jej zakończeniu. Używaj myślników "- ".
+6. WYRÓŻNIENIA: Kluczowe wnioski wytłuszczaj "**pogrubieniem**" lub cytatem blokowym "> ".
+7. CAŁKOWITY ZAKAZ HTML: Zero <br>, <div>, <span>, <a>, <button>, <p>. Wyłącznie czysty Markdown.
+8. BEZWZGLĘDNA PROCEDURA ZAKOŃCZENIA (ZERO PLACEHOLDERÓW):
+   Na samym końcu markdown_content (po ostatnim akapicie) umieść:
+   - Jedną pustą linię.
+   - Pojedynczy, pogrubiony link kierujący do /oferta ze strzałką →.
+     Tekst linku MUSI być unikalnym, wymyślonym przez Ciebie perswazyjnym hasłem korzyści, wynikającym ściśle z tematu artykułu.
+   - Jedną pustą linię.
+   - Podpis autora: *Autor: Krzysztof Żebrowski*
 
-**[Tekst zachęty do działania →](/oferta)**
+   CZARNA LISTA ZAKAZANYCH FRAZ W CTA:
+   NIGDY nie wstawiaj ciągów:
+   - "Tekst zachęty do działania"
+   - "Twoje dynamiczne, kontekstowe wezwanie do działania"
+   - "Twoje dynamiczne wezwanie"
+   - "[CTA]"
+   - "[Link]"
+   - "[Twój tekst]"
+   - "Kliknij tutaj"
+   - "Dowiedz się więcej"
 
-*Autor: Krzysztof Żebrowski*
+   Przykłady prawidłowych zakończeń:
+   - Dla artykułu o prowizjach: **[Zbuduj stronę WWW, która przynosi bezpośrednie rezerwacje bez prowizji →](/oferta)**
+   - Dla artykułu o self check-in: **[Wdróż bezobsługowy system self check-in i uwolnij swój czas w sezonie →](/oferta)**
+   - Dla artykułu o regulaminach: **[Zabezpiecz swój obiekt i wdróż nowoczesny system zarządzania rezerwacjami →](/oferta)**
 
 ## ISTNIEJĄCE ARTYKUŁY — NIE POWTARZAJ SIĘ POD ŻADNYM POZOREM
 Poniżej lista WSZYSTKICH dotychczasowych artykułów. Twój nowy artykuł MUSI być inny:
@@ -546,7 +657,7 @@ ${pastTopics.length > 0 ? pastTopics.map(t => `- "${t}"`).join('\n') : "Brak wcz
 ## FORMAT ODPOWIEDZI — WYŁĄCZNIE JSON
 {
   "title": "Tytuł artykułu (max 70 znaków, chwytliwy, UNIKATOWY, NIGDY nie zaczynaj od 'Ile...')",
-  "metaTitle": "Tytuł SEO max 60 znaków z '| ${client.clientName}' na końcu",
+  "metaTitle": "Tytuł SEO max 60 znaków z '| BROSYSTEMS - Krzysztof Żebrowski' na końcu",
   "metaDescription": "Meta opis max 155 znaków, język korzyści, zachęcający do kliknięcia",
   "description": "Identyczny jak metaDescription",
   "date": "${currentDate}",
@@ -554,13 +665,13 @@ ${pastTopics.length > 0 ? pastTopics.map(t => `- "${t}"`).join('\n') : "Brak wcz
   "category": "Jedna z: Zarabianie na wynajmie | Marketing obiektów | Technologia | Porady biznesowe | Sezon i strategia | Prawo i formalności",
   "readTime": "X min (oszacuj na podstawie długości)",
   "updatedAt": "${polishDate}",
-  "excerpt": "2-3 zdania zachęty, max 200 znaków",
+  "excerpt": "Mocny, 2-3 zdaniowy abstrakt biznesowy (max 200 znaków)",
   "relatedSlugs": [],
-  "ctaTitle": "Krótki, mocny nagłówek CTA",
-  "ctaDescription": "1-2 zdania zachęty",
-  "ctaLabel": "Tekst przycisku CTA",
+  "ctaTitle": "Krótki nagłówek sekcji CTA pod artykułem (np. Chcesz odzyskać kontrolę nad rezerwacjami?)",
+  "ctaDescription": "1-2 zdania wyjaśniające jak BROSYSTEMS pomaga wdrożyć to rozwiązanie",
+  "ctaLabel": "Poznaj ofertę",
   "ctaHref": "/oferta",
-  "markdown_content": "Pełna treść artykułu w Markdown (BEZ frontmatter YAML, BEZ surowego HTML, MINIMUM 1000 słów)"
+  "markdown_content": "Pełna treść artykułu w Markdown (BEZ nagłówka # H1, BEZ frontmatter YAML, BEZ surowego HTML, MINIMUM 1000 słów, zakończona unikalnym CTA do /oferta i podpisem *Autor: Krzysztof Żebrowski*)"
 }`;
 
     userPrompt = `Napisz obszerny, wartościowy artykuł B2B w formacie "${selectedFormat.name}".
@@ -578,14 +689,17 @@ KONTEKST CZASOWY:
 
 TWARDE WYMAGANIA:
 1. MINIMUM 1000 słów wartościowej treści (celuj w 1200-1500)
-2. MINIMUM 4 konkretne kalkulacje finansowe z kwotami PLN
+2. MINIMUM 3-4 konkretne kalkulacje finansowe z kwotami PLN
 3. Format: ${selectedFormat.name} — trzymaj się jego struktury
 4. Wzorzec tytułu: ${selectedFormat.titlePattern}
 5. NIGDY nie zaczynaj tytułu od "Ile kosztują Cię..." ani "Ile tracisz..."
-6. CTA wyłącznie w Markdown, NIGDY w HTML
-7. Data do JSON: ${currentDate} (format YYYY-MM-DD)
+6. Zakaz nagłówka H1 (#) w markdown_content — zacznij bezpośrednio od wstępu
+7. Tabele i listy GFM: zawsze oddzielone pustymi liniami przed i po
+8. CTA na końcu: unikalne, perswazyjne hasło nawiązujące do tematu artykułu w formacie **[Konkretna korzyść →](/oferta)**, a po pustej linii podpis *Autor: Krzysztof Żebrowski*. ZERO PLACEHOLDERÓW (zakaz: "Tekst zachęty do działania", "Twoje dynamiczne...", "[CTA]", "[Link]")
+9. Wyłącznie czysty Markdown bez surowego HTML
+10. Data do JSON: ${currentDate} (format YYYY-MM-DD), updatedAt: "${polishDate}"
 
-PAMIĘTAJ: Ten artykuł ma budować autorytet domeny, nie ją niszczyć. Jakość > ilość.`;
+PAMIĘTAJ: Ten artykuł ma budować autorytet domeny i generować zapytania ofertowe. Jakość > ilość.`;
 
   } else {
     // ─────────────────────────────────────────────────────────
@@ -689,7 +803,7 @@ Wymyśl temat który jest:
     throw new Error("OpenAI returned empty response");
   }
 
-  const result = JSON.parse(content) as GenerateResult;
+  let result = sanitizeArticle(JSON.parse(content) as GenerateResult, isB2B);
 
   // ─── POST-GENERATION VALIDATION ───
   const wordCount = result.markdown_content.split(/\s+/).filter(w => w.length > 0).length;
@@ -714,11 +828,11 @@ Wymyśl temat który jest:
 
     const retryContent = retryCompletion.choices[0].message.content;
     if (retryContent) {
-      const retryResult = JSON.parse(retryContent) as GenerateResult;
+      const retryResult = sanitizeArticle(JSON.parse(retryContent) as GenerateResult, isB2B);
       const retryWordCount = retryResult.markdown_content.split(/\s+/).filter(w => w.length > 0).length;
       console.log(`[OpenAI] Retry generated: "${retryResult.title}" — ${retryWordCount} words`);
       if (retryWordCount > wordCount) {
-        return retryResult;
+        result = retryResult;
       }
     }
   }
